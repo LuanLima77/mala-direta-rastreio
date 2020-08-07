@@ -87,7 +87,14 @@ foreach($recentcustomers as $customer)
     //echo "DESTINATARIO=>" . $row[2] . "<br>";
     //echo "CEP=>" . $row[3] . "<br>";
    // echo "UF=>" . $row[4] . "<br>";
+   // echo RASTREIO=> . $row[8] . "<br>";
 //echo "-------------------------" . "<br>";
+
+$rastreio = $row[8];
+$cliente = $customer->shipping->first_name;
+$pedido = $customer->id;
+$data = new DateTime($customer->date_created);
+$plano = $customer->line_items[0]->name;
 
 }
 
@@ -103,12 +110,13 @@ $mail = new PHPMailer(true);
 try {
     //Server settings
     $mail->SMTPDebug = 3;
+    $mail->CharSet = 'UTF-8';
     $mail->isSMTP();                                            // Send using SMTP
     $mail->Host       = 'smtp.zoho.com';                    // Set the SMTP server to send through
     $mail->SMTPAuth   = true;
     $mail->SMTPSecure = 'ssl';
     $mail->Username   = 'assessoria@literatour.com.br';                     // SMTP username
-    $mail->Password   = 'desapegando#2020@';                               // SMTP password
+    $mail->Password   = 'Literatour2019#';                               // SMTP password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
     $mail->Port       = 587;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
@@ -123,11 +131,60 @@ try {
     // Attachments
     //$mail->addAttachment('/var/tmp/file.tar.gz');         // Add attachments
     //$mail->addAttachment('/tmp/image.jpg', 'new.jpg');    // Optional name
-
+//https://rastreamentocorreios.info/consulta/JN420977697BR
     // Content
     $mail->isHTML(true);                                  // Set email format to HTML
-    $mail->Subject = 'Literatour - Sua caixinha foi enviada!';
-    $mail->Body    = 'Aqui está seu rastreio!';
+    $mail->Subject = 'Literatour - Sua caixinha já foi enviada!';
+    $mail->Body    = "
+    <html>
+    <head><title>Sua caixinha foi enviada</title></head>
+    <body>
+        <div style=background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
+            <h1>Sua caixinha já foi enviada!</h1>
+        </div>
+        <div id='content'>
+    <p>Olá,$cliente! Sua caixinha desse mês já foi enviada pelos Correios!</p>
+    <p>Para acompanhar a entrega, use o seguinte código de rastreio:</p>
+    <ul> 
+      <li><a href='https://rastreamentocorreios.info/consulta/$rastreio'>$rastreio</a>
+      </li>
+    </ul>
+</div>
+    <div style='font-family: Arial, Helvetica, sans-serif'>
+        <h1> Seu Pedido:</h1>
+        <table style=''>
+            <tr>
+              <th>Data</th>
+              <th>Número</th>
+              <th>Plano</th>
+            </tr>
+            <tr>
+              <td>$data->format('d/m/Y')
+              </td>
+              <td>$pedido</td>
+              <td>$plano</td>
+            </tr>
+           
+          </table>
+
+    </div>
+
+    <div style='font-family: Arial, Helvetica, sans-serif'>
+    <h1> Sua Entrega:</h1>
+    <table style=''>
+        <tr>
+          <th>Endereço</th>
+        </tr>
+        <tr>
+          <td><i>Fernandes Guimaraes, 88, Botafogo - RJ></i></td>
+        </tr>
+       
+      </table>
+
+</div>
+
+    </body>
+    </html>";
     $mail->AltBody = 'Aqui está seu rastreio!';
 
     $mail->send();
