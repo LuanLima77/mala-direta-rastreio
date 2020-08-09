@@ -1,0 +1,49 @@
+<html>
+    <head><title>Sua caixinha foi enviada</title></head>
+    <body>
+        <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
+            <h1>Sua caixinha já foi enviada!</h1>
+        </div>
+        <div id='content'>
+    <p>Olá,$cliente! Sua caixinha desse mês já foi enviada pelos Correios!</p>
+    <p>Para acompanhar a entrega, use o seguinte código de rastreio:</p>
+    <ul> 
+      <li><a href='https://rastreamentocorreios.info/consulta/$rastreio'>$rastreio</a>
+      </li>
+    </ul>
+</div>
+    <div style='font-family: Arial, Helvetica, sans-serif'>
+        <h1> Seu Pedido:</h1>
+        <table style='border: 1px solid #ddd;'>
+            <tr>
+              <th>Data</th>
+              <th>Número</th>
+              <th>Plano</th>
+            </tr>
+            <tr>
+              <td>$data->format('d/m/Y')
+              </td>
+              <td>$pedido</td>
+              <td>$plano</td>
+            </tr>
+           
+          </table>
+
+    </div>
+
+    <div style='font-family: Arial, Helvetica, sans-serif'>
+    <h1> Sua Entrega:</h1>
+    <table style='border: 1px solid #ddd;'>
+        <tr>
+          <th>Endereço</th>
+        </tr>
+        <tr>
+          <td><i>Fernandes Guimaraes, 88, Botafogo - RJ></i></td>
+        </tr>
+       
+      </table>
+
+</div>
+
+    </body>
+    </html>

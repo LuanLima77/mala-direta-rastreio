@@ -139,7 +139,7 @@ try {
     <html>
     <head><title>Sua caixinha foi enviada</title></head>
     <body>
-        <div style=background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
+        <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
             <h1>Sua caixinha já foi enviada!</h1>
         </div>
         <div id='content'>
@@ -152,7 +152,7 @@ try {
 </div>
     <div style='font-family: Arial, Helvetica, sans-serif'>
         <h1> Seu Pedido:</h1>
-        <table style=''>
+        <table style='border: 1px solid #ddd;'>
             <tr>
               <th>Data</th>
               <th>Número</th>
@@ -171,7 +171,7 @@ try {
 
     <div style='font-family: Arial, Helvetica, sans-serif'>
     <h1> Sua Entrega:</h1>
-    <table style=''>
+    <table style='border: 1px solid #ddd;'>
         <tr>
           <th>Endereço</th>
         </tr>
@@ -211,9 +211,17 @@ echo "SIMILARIDADE E $percent <br>";
 
   }else
   {
-    echo "MATCH DUPLO PERDIDO ! </br>";
+    echo "MATCH DUPLO PERDIDO ! </br>"; 
+    //listagem manual
+    echo "NOME : " . $row[2]. " CEP: ". $row[3] . " UF " . $row[4] . " RASTREIO: " . $rastreio . " <br>";
+    
 
   }
+}else
+{
+  //listagem manual
+  echo "NOME : " . $row[2]. " CEP: ". $row[3] . " UF " . $row[4] . " RASTREIO: " . $rastreio . " <br>";
+
 }
 
 
