@@ -63,8 +63,6 @@ $recentcustomers = $woocommerce->get($endpoint, $parameters);
 
 echo count($recentcustomers) . " USUÁRIOS ENCONTRADOS..." . "<br>";
 
-
-
 foreach($recentcustomers as $customer)
 {
     //var_dump($customer->shipping);
@@ -76,35 +74,62 @@ foreach($recentcustomers as $customer)
   $userFoundName = "";
 
    foreach($workSheet as $row)
-{
-  if($customer->shipping->postcode == $row[3])
   {
-     $userFoundName = $customer->shipping->first_name; 
-     $userFound++;
-     echo  "MATCH DE CEP - ASSINANTE $userFoundName! </br>";
+    $rastreio = $row[8];
+    $cliente = $customer->shipping->first_name;
+    $pedido = $customer->id;
+    $data = new DateTime($customer->date_created);
+    $plano = $customer->line_items[0]->name;
+    // echo "DESTINATARIO=>" . $row[2] . "<br>";
+    // echo "CEP=>" . $row[3] . "<br>";
+    // echo "UF=>" . $row[4] . "<br>";
+    // echo "RASTREIO=>" . $row[8] . "<br>";
+    if($customer->shipping->postcode == $row[3])
+     {
+       $userFoundName = $customer->billing->first_name . " " . $customer->billing->last_name  ; 
+       $userFound++;
+     }
+       
+}
 
+  if($userFound == 1)
+  {   
+    echo  "<b>$userFoundName encontrado(a)!</b>(match simples de CEP ) </br>";
+    //enviando email...
+    // enviarRastreioPorEmail($data,$pedido, $plano,$cliente,$rastreio)
+    //exit();
+
+   }else if($userFound > 1) 
+   {
+      // $var_1 = "Luan";
+     //$var_2 = "LUSN";
+    //similar_text(strtolower($var_1), strtolower($var_2), $percent);
+    //echo "PERCENT É $percent <br>";
+    similar_text(strtolower($customer->billing->first_name), strtolower($row[2]), $percent);
+    if($percent > 55)
+    {
+      echo  "<b>$userFoundName encontrado(a)!</b>(match duplo de CEP e nome por similaridade ) </br>";
+      //enviando email...
+    }else
+    {
+      //echo "MATCH DUPLO PERDIDO ! </br>"; 
+      //listagem manual
+      echo "<b>NÃO LOCALIZADO -</b>PEDIDO - " . $customer->id  ."  NOME : " . $customer->billing->first_name . " " . $customer->billing->last_name . " <br>";
+    }
+  }else
+   {
+    //listagem manual
+    echo "<b>NÃO LOCALIZADO -</b>PEDIDO - " . $customer->id  ."  NOME : " . $customer->billing->first_name . " " .  $customer->billing->last_name . " <br>";
   }
-    //echo "DESTINATARIO=>" . $row[2] . "<br>";
-    //echo "CEP=>" . $row[3] . "<br>";
-   // echo "UF=>" . $row[4] . "<br>";
-   // echo RASTREIO=> . $row[8] . "<br>";
-//echo "-------------------------" . "<br>";
 
-$rastreio = $row[8];
-$cliente = $customer->shipping->first_name;
-$pedido = $customer->id;
-$data = new DateTime($customer->date_created);
-$plano = $customer->line_items[0]->name;
+   echo "-------------------------" . "<br>";
 
 }
 
-if($userFound == 1)
-{
-    echo "MATCH PERFEITO! <br><br>";
-    //enviando email...
-   
 
-// Instantiation and passing `true` enables exceptions
+function enviarRastreioPorEmail($data,$pedido, $plano,$cliente,$rastreio)
+{
+ // Instantiation and passing `true` enables exceptions
 $mail = new PHPMailer(true);
 
 try {
@@ -136,100 +161,64 @@ try {
     $mail->isHTML(true);                                  // Set email format to HTML
     $mail->Subject = 'Literatour - Sua caixinha já foi enviada!';
     $mail->Body    = "
-    <html>
-    <head><title>Sua caixinha foi enviada</title></head>
-    <body>
-        <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
-            <h1>Sua caixinha já foi enviada!</h1>
-        </div>
-        <div id='content'>
-    <p>Olá,$cliente! Sua caixinha desse mês já foi enviada pelos Correios!</p>
-    <p>Para acompanhar a entrega, use o seguinte código de rastreio:</p>
-    <ul> 
-      <li><a href='https://rastreamentocorreios.info/consulta/$rastreio'>$rastreio</a>
-      </li>
-    </ul>
-</div>
-    <div style='font-family: Arial, Helvetica, sans-serif'>
-        <h1> Seu Pedido:</h1>
-        <table style='border: 1px solid #ddd;'>
-            <tr>
-              <th>Data</th>
-              <th>Número</th>
-              <th>Plano</th>
-            </tr>
-            <tr>
-              <td>$data->format('d/m/Y')
-              </td>
-              <td>$pedido</td>
-              <td>$plano</td>
-            </tr>
-           
-          </table>
+              <html>
+              <head><title>Sua caixinha foi enviada</title></head>
+              <body>
+                  <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
+                      <h1>Sua caixinha já foi enviada!</h1>
+                  </div>
+                  <div id='content'>
+              <p>Olá,$cliente! Sua caixinha desse mês já foi enviada pelos Correios!</p>
+              <p>Para acompanhar a entrega, use o seguinte código de rastreio:</p>
+              <ul> 
+                <li><a href='https://rastreamentocorreios.info/consulta/$rastreio'>$rastreio</a>
+                </li>
+              </ul>
+          </div>
+              <div style='font-family: Arial, Helvetica, sans-serif'>
+                  <h1> Seu Pedido:</h1>
+                  <table style='border: 1px solid #ddd;'>
+                      <tr>
+                        <th>Data</th>
+                        <th>Número</th>
+                        <th>Plano</th>
+                      </tr>
+                      <tr>
+                        <td>$data
+                        </td>
+                        <td>$pedido</td>
+                        <td>$plano</td>
+                      </tr>
+                    
+                    </table>
 
-    </div>
+              </div>
 
-    <div style='font-family: Arial, Helvetica, sans-serif'>
-    <h1> Sua Entrega:</h1>
-    <table style='border: 1px solid #ddd;'>
-        <tr>
-          <th>Endereço</th>
-        </tr>
-        <tr>
-          <td><i>Fernandes Guimaraes, 88, Botafogo - RJ></i></td>
-        </tr>
-       
-      </table>
+              <div style='font-family: Arial, Helvetica, sans-serif'>
+              <h1> Sua Entrega:</h1>
+              <table style='border: 1px solid #ddd;'>
+                  <tr>
+                    <th>Endereço</th>
+                  </tr>
+                  <tr>
+                    <td><i>Fernandes Guimaraes, 88, Botafogo - RJ></i></td>
+                  </tr>
+                
+                </table>
 
-</div>
+          </div>
 
-    </body>
-    </html>";
+              </body>
+              </html>";
     $mail->AltBody = 'Aqui está seu rastreio!';
 
-    $mail->send();
+   // $mail->send();
     echo 'Message has been sent';
-} catch (Exception $e) {
+   } catch (Exception $e) {
     echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-}
-
-exit();
-
-}else if($userFound > 1)
-{
- // $var_1 = "Luan";
-//$var_2 = "LUSN";
-//similar_text(strtolower($var_1), strtolower($var_2), $percent);
-//echo "PERCENT É $percent <br>";
- 
-similar_text(strtolower($customer->shipping->first_name), strtolower($row[2]), $percent);
-echo "SIMILARIDADE E $percent <br>";
-  if($percent > 55)
-  {
-      echo "MATCH DUPLO ENCONTRADO ! </br>";
-     //enviando email...
-
-  }else
-  {
-    echo "MATCH DUPLO PERDIDO ! </br>"; 
-    //listagem manual
-    echo "NOME : " . $row[2]. " CEP: ". $row[3] . " UF " . $row[4] . " RASTREIO: " . $rastreio . " <br>";
-    
-
   }
-}else
-{
-  //listagem manual
-  echo "NOME : " . $row[2]. " CEP: ". $row[3] . " UF " . $row[4] . " RASTREIO: " . $rastreio . " <br>";
 
 }
-
-
-
-}
-
-
-
 
 
 
