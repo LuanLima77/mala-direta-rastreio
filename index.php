@@ -13,26 +13,28 @@ use PHPMailer\PHPMailer\SMTP;
 
 
 
-$inputFileName = './mala-estadual.xls';
+$inputFileName = './nacionalagosto.xls';
+$outputFileName = './rastreio_nacionais_nao_localizados.ods';
 $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
 $reader->setReadDataOnly(true);
+
+$readerOds = new \PhpOffice\PhpSpreadsheet\Reader\Ods();
 
 /** Load $inputFileName to a Spreadsheet Object  **/
 $spreadsheet = $reader->load($inputFileName);
 $workSheet = $spreadsheet->getActiveSheet()->toArray();
 
+//$workSheetToDo= new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+//$workSheetToDo->getActiveSheet()->setCellValue('A1', 'DESTINATARIO');
+//$workSheetToDo->getActiveSheet()->setCellValue('B1', 'CEP');
+//$workSheetToDo->getActiveSheet()->setCellValue('C1', 'UF');
+//$workSheetToDo->getActiveSheet()->setCellValue('D1', 'STATUS');
 
-//var_dump($workSheet);
+$workSheetToDo = $readerOds->load($outputFileName);
+//$teste = $workSheetToDo->getActiveSheet()->toArray();
 
-foreach($workSheet as $row)
-{
+$writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($workSheetToDo, "Ods");
 
-    //echo "DESTINATARIO=>" . $row[2] . "<br>";
-    //echo "CEP=>" . $row[3] . "<br>";
-    //echo "UF=>" . $row[4] . "<br>";
-//echo "-------------------------" . "<br>";
-
-}
 
 
 //Verificando pedidos do woocommerce
@@ -41,27 +43,31 @@ $consumer_key = "ck_9e9f6e07f48147b3c6c4cf4b66225e4414a11724";
 $consumer_secret ="cs_d79c90ba06f745edafebc270a27d3934682b4014";
 
 $woocommerce = new Client($url, $consumer_key, $consumer_secret);
+//Comecei com 16 dias atras, no dia 14/08
+$inicioQuinzena = gmdate("o-m-d",strtotime("-18 days")). "T00:00:00";
+$fimQuinzena = gmdate("o-m-d",strtotime("-2 days")). "T00:00:00";
 
-$ontem = gmdate("o-m-d",strtotime("-15 days")). "T00:00:00";
-$hoje = gmdate("o-m-d"). "T00:00:00";
-
+//USAR PAGINACAO
 //$ontem = "2020-05-31T18:30:00";
 
 $endpoint = "orders";
 
-echo "Iniciando coletas do dia $ontem" . "<br>\n";
+echo "Pedidos entre  $inicioQuinzena e $fimQuinzena" . "<br>\n";
 $parameters = [
     "status" => "processing",
-    "after" => $ontem,
-    "before" => $hoje,
+    "after" => $inicioQuinzena,
+    "before" => $fimQuinzena,
     "per_page" => 100,
+    "page" => 3,
     "order" => "asc"
    
 ];
 
 $recentcustomers = $woocommerce->get($endpoint, $parameters);
+$acertos = 0;
 
-echo count($recentcustomers) . " USUÁRIOS ENCONTRADOS..." . "<br>";
+
+echo count($recentcustomers) . " pedidos recentes encontrados..." . "<br>";
 
 foreach($recentcustomers as $customer)
 {
@@ -72,6 +78,8 @@ foreach($recentcustomers as $customer)
   // echo "-------------------------" . "<br>";
   $userFound = 0 ;
   $userFoundName = "";
+  $rastreioLocalizado = "";
+
 
    foreach($workSheet as $row)
   {
@@ -79,14 +87,24 @@ foreach($recentcustomers as $customer)
     $cliente = $customer->shipping->first_name;
     $pedido = $customer->id;
     $data = new DateTime($customer->date_created);
+
     $plano = $customer->line_items[0]->name;
-    // echo "DESTINATARIO=>" . $row[2] . "<br>";
+    $email = $customer->billing->email;
+    $row[1] = 'teste';
+
+
+    $endereco = "CEP: " . $customer->shipping->postcode . ", " . $customer->shipping->address_1 . " " . $customer->shipping->address_2
+               . ", " . $customer->shipping->number . ", " . $customer->shipping->neighborhood . ", " . $customer->shipping->city
+               . ", " . $customer->shipping->state;
+
+              // echo "DESTINATARIO=>" . $row[2] . "<br>";
     // echo "CEP=>" . $row[3] . "<br>";
     // echo "UF=>" . $row[4] . "<br>";
     // echo "RASTREIO=>" . $row[8] . "<br>";
     if($customer->shipping->postcode == $row[3])
      {
        $userFoundName = $customer->billing->first_name . " " . $customer->billing->last_name  ; 
+       $rastreioLocalizado = $rastreio;
        $userFound++;
      }
        
@@ -96,39 +114,67 @@ foreach($recentcustomers as $customer)
   {   
     echo  "<b>$userFoundName encontrado(a)!</b>(match simples de CEP ) </br>";
     //enviando email...
-    // enviarRastreioPorEmail($data,$pedido, $plano,$cliente,$rastreio)
-    //exit();
+     enviarRastreioPorEmail($data,$pedido, $plano,$email,$cliente,$rastreioLocalizado,$endereco);
+     $acertos++;
+
 
    }else if($userFound > 1) 
    {
-      // $var_1 = "Luan";
-     //$var_2 = "LUSN";
-    //similar_text(strtolower($var_1), strtolower($var_2), $percent);
-    //echo "PERCENT É $percent <br>";
     similar_text(strtolower($customer->billing->first_name), strtolower($row[2]), $percent);
     if($percent > 55)
     {
       echo  "<b>$userFoundName encontrado(a)!</b>(match duplo de CEP e nome por similaridade ) </br>";
+      $acertos++;
       //enviando email...
+      enviarRastreioPorEmail($data,$pedido, $plano,$cliente,$rastreioLocalizado);
+
     }else
     {
       //echo "MATCH DUPLO PERDIDO ! </br>"; 
       //listagem manual
-      echo "<b>NÃO LOCALIZADO -</b>PEDIDO - " . $customer->id  ."  NOME : " . $customer->billing->first_name . " " . $customer->billing->last_name . " <br>";
+      echo "<b>NÃO LOCALIZADO -</b>DATA: " . $data->format('d/m/Y H:i:s') . " PEDIDO:  " . $customer->id  ."  NOME : " . 
+               $customer->billing->first_name . " " . $customer->billing->last_name . 
+               "CEP " . $customer->shipping->postcode ." - UF:  " . $customer->shipping->state . " <br>";
+
+               //marcando na planilha como nao localizado
+               $nomeCompleto = $customer->billing->first_name . " " . $customer->billing->last_name;
+               $row = $workSheetToDo->getActiveSheet()->getHighestRow()+1;
+               $workSheetToDo->getActiveSheet()->insertNewRowBefore($row);
+               $workSheetToDo->getActiveSheet()->setCellValue('A'.$row,$nomeCompleto);
+               $workSheetToDo->getActiveSheet()->setCellValue('B'.$row,$customer->shipping->postcode);
+               $workSheetToDo->getActiveSheet()->setCellValue('C'.$row,$customer->shipping->state);
+
+
+
+    // echo "DESTINATARIO=>" . $row[2] . "<br>";
+    // echo "CEP=>" . $row[3] . "<br>";
+    // echo "UF=>" . $row[4] . "<br>";
+    // echo "RASTREIO=>" . $row[8] . "<br>";
     }
   }else
    {
     //listagem manual
-    echo "<b>NÃO LOCALIZADO -</b>PEDIDO - " . $customer->id  ."  NOME : " . $customer->billing->first_name . " " .  $customer->billing->last_name . " <br>";
+    echo "<b>NÃO LOCALIZADO -</b>Data: <b>" . $data->format('d/m/Y H:i:s') . "</b> Pedido:  <b>" . $customer->id  ."</b>  Nome :<b> " . 
+    $customer->billing->first_name . " " . $customer->billing->last_name . 
+    "</b> CEP <b>" . $customer->shipping->postcode ."</b> - UF: <b>" . $customer->shipping->state . "</b> <br>";
+
+    $nomeCompleto = $customer->billing->first_name . " " . $customer->billing->last_name;
+    $row = $workSheetToDo->getActiveSheet()->getHighestRow()+1;
+    $workSheetToDo->getActiveSheet()->insertNewRowBefore($row);
+    $workSheetToDo->getActiveSheet()->setCellValue('A'.$row,$nomeCompleto);
+    $workSheetToDo->getActiveSheet()->setCellValue('B'.$row,$customer->shipping->postcode);
+    $workSheetToDo->getActiveSheet()->setCellValue('C'.$row,$customer->shipping->state);  
   }
 
-   echo "-------------------------" . "<br>";
 
+   echo "-------------------------" . "<br>";
+   //$writer->save("rastreio_nacionais_nao_localizados.ods");
 }
 
 
-function enviarRastreioPorEmail($data,$pedido, $plano,$cliente,$rastreio)
+function enviarRastreioPorEmail($data,$pedido, $plano, $email,$cliente,$rastreio,$endereco)
 {
+
  // Instantiation and passing `true` enables exceptions
 $mail = new PHPMailer(true);
 
@@ -141,17 +187,17 @@ try {
     $mail->SMTPAuth   = true;
     $mail->SMTPSecure = 'ssl';
     $mail->Username   = 'assessoria@literatour.com.br';                     // SMTP username
-    $mail->Password   = 'Literatour2019#';                               // SMTP password
+    $mail->Password   = 'Literatour2019#@2020';                               // SMTP password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
     $mail->Port       = 587;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
     //Recipients
     $mail->setFrom('assessoria@literatour.com.br', 'Literatour');
-    $mail->addAddress('77luanlima@gmail.com', 'Luan Lima');     // Add a recipient
+    $mail->addAddress($email,$cliente);     // Add a recipient
     //$mail->addAddress('ellen@example.com');               // Name is optional
     //$mail->addReplyTo('info@example.com', 'Information');
     //$mail->addCC('cc@example.com');
-    //$mail->addBCC('bcc@example.com');
+    $mail->addBCC('77luanlima@gmail.com', 'Luan Lima');
 
     // Attachments
     //$mail->addAttachment('/var/tmp/file.tar.gz');         // Add attachments
@@ -159,17 +205,17 @@ try {
 //https://rastreamentocorreios.info/consulta/JN420977697BR
     // Content
     $mail->isHTML(true);                                  // Set email format to HTML
-    $mail->Subject = 'Literatour - Sua caixinha já foi enviada!';
+    $mail->Subject = 'Literatour - Sua caixinha já está a caminho!';
     $mail->Body    = "
               <html>
-              <head><title>Sua caixinha foi enviada</title></head>
+              <head><title>Caixinha a caminho</title></head>
               <body>
                   <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
-                      <h1>Sua caixinha já foi enviada!</h1>
+                      <h1>Sua caixinha já está a caminho! :) </h1>
                   </div>
                   <div id='content'>
-              <p>Olá,$cliente! Sua caixinha desse mês já foi enviada pelos Correios!</p>
-              <p>Para acompanhar a entrega, use o seguinte código de rastreio:</p>
+              <p>Olá,$cliente! Sua caixinha  já foi enviada!</p>
+              <p>Para acompanhar a entrega, use o seguinte decódigo de rastreio:</p>
               <ul> 
                 <li><a href='https://rastreamentocorreios.info/consulta/$rastreio'>$rastreio</a>
                 </li>
@@ -179,13 +225,10 @@ try {
                   <h1> Seu Pedido:</h1>
                   <table style='border: 1px solid #ddd;'>
                       <tr>
-                        <th>Data</th>
-                        <th>Número</th>
+                        <th>Pedido</th>
                         <th>Plano</th>
                       </tr>
                       <tr>
-                        <td>$data
-                        </td>
                         <td>$pedido</td>
                         <td>$plano</td>
                       </tr>
@@ -201,7 +244,7 @@ try {
                     <th>Endereço</th>
                   </tr>
                   <tr>
-                    <td><i>Fernandes Guimaraes, 88, Botafogo - RJ></i></td>
+                    <td><i>$endereco</i></td>
                   </tr>
                 
                 </table>
@@ -211,8 +254,8 @@ try {
               </body>
               </html>";
     $mail->AltBody = 'Aqui está seu rastreio!';
-
-   // $mail->send();
+    $mail->send();    
+    //exit();
     echo 'Message has been sent';
    } catch (Exception $e) {
     echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
