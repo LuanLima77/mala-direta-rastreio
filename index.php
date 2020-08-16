@@ -59,7 +59,7 @@ $parameters = [
     "before" => $fimQuinzena,
     "per_page" => 100,
     "page" => 3,
-    "order" => "asc"
+    "order" => "desc"
    
 ];
 
