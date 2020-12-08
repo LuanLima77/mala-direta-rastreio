@@ -10,11 +10,12 @@ Use Automattic\WooCommerce\Client;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
+//RENOMEAR NACIONAIS
 
 
-
-$inputFileName = './nacionalagosto.xls';
-$outputFileName = './rastreio_nacionais_nao_localizados.ods';
+$inputFileName = './estadualnovembro2.xls';
+$outputPlanilha = 'rastreios_estaduais_nao_localizados.ods';
+$outputFileName = "./$outputPlanilha";
 $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
 $reader->setReadDataOnly(true);
 
@@ -36,15 +37,14 @@ $workSheetToDo = $readerOds->load($outputFileName);
 $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($workSheetToDo, "Ods");
 
 
-
 //Verificando pedidos do woocommerce
 $url = "https://www.literatour.com.br";
 $consumer_key = "ck_9e9f6e07f48147b3c6c4cf4b66225e4414a11724";
 $consumer_secret ="cs_d79c90ba06f745edafebc270a27d3934682b4014";
 
 $woocommerce = new Client($url, $consumer_key, $consumer_secret);
-//Comecei com 16 dias atras, no dia 14/08
-$inicioQuinzena = gmdate("o-m-d",strtotime("-18 days")). "T00:00:00";
+//Comecei com 16 dias atras, no dia 1/09
+$inicioQuinzena = gmdate("o-m-d",strtotime("-17 days")). "T00:00:00";
 $fimQuinzena = gmdate("o-m-d",strtotime("-2 days")). "T00:00:00";
 
 //USAR PAGINACAO
@@ -58,8 +58,8 @@ $parameters = [
     "after" => $inicioQuinzena,
     "before" => $fimQuinzena,
     "per_page" => 100,
-    "page" => 3,
-    "order" => "desc"
+    "page" => 5,
+    "order" => "asc"
    
 ];
 
@@ -71,7 +71,8 @@ echo count($recentcustomers) . " pedidos recentes encontrados..." . "<br>";
 
 foreach($recentcustomers as $customer)
 {
-    //var_dump($customer->shipping);
+    var_dump($customer->correios_tracking_code);
+    exit();
     //echo "DESTINATARIO=>" . $customer->shipping->first_name . "<br>";
     //echo "CEP=>" . $customer->shipping->postcode . "<br>";
     //echo "UF=>" . $customer->shipping->state . "<br>";
@@ -115,6 +116,10 @@ foreach($recentcustomers as $customer)
     echo  "<b>$userFoundName encontrado(a)!</b>(match simples de CEP ) </br>";
     //enviando email...
      enviarRastreioPorEmail($data,$pedido, $plano,$email,$cliente,$rastreioLocalizado,$endereco);
+     //post pedido atualizado com rastreio
+     exit();
+     $customer->correios_tracking_code = $rastreioLocalizado;
+     $woocommerce->post($endpoint, $customer);
      $acertos++;
 
 
@@ -127,6 +132,11 @@ foreach($recentcustomers as $customer)
       $acertos++;
       //enviando email...
       enviarRastreioPorEmail($data,$pedido, $plano,$cliente,$rastreioLocalizado);
+      //post pedido atualizado com email
+       $customer->correios_tracking_code = $rastreioLocalizado;
+       $woocommerce->post($endpoint, $customer);
+
+
 
     }else
     {
@@ -168,7 +178,7 @@ foreach($recentcustomers as $customer)
 
 
    echo "-------------------------" . "<br>";
-   //$writer->save("rastreio_nacionais_nao_localizados.ods");
+   $writer->save($outputPlanilha);
 }
 
 
@@ -183,13 +193,13 @@ try {
     $mail->SMTPDebug = 3;
     $mail->CharSet = 'UTF-8';
     $mail->isSMTP();                                            // Send using SMTP
-    $mail->Host       = 'smtp.zoho.com';                    // Set the SMTP server to send through
+    $mail->Host       = 'smtp.elasticemail.com';                    // Set the SMTP server to send through
     $mail->SMTPAuth   = true;
-    $mail->SMTPSecure = 'ssl';
-    $mail->Username   = 'assessoria@literatour.com.br';                     // SMTP username
-    $mail->Password   = 'Literatour2019#@2020';                               // SMTP password
+    $mail->SMTPSecure = 'tls';
+    $mail->Username   = 'edumachion@gmail.com';                     // SMTP username
+    $mail->Password   = '2A26BD6A15013BBB3BA1DBCDB4C7E8B4680B';                               // SMTP password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
-    $mail->Port       = 587;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+    $mail->Port       = 2525;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
     //Recipients
     $mail->setFrom('assessoria@literatour.com.br', 'Literatour');
@@ -208,14 +218,14 @@ try {
     $mail->Subject = 'Literatour - Sua caixinha já está a caminho!';
     $mail->Body    = "
               <html>
-              <head><title>Caixinha a caminho</title></head>
+              <head><title>Caixinha enviada pelos Correios :)</title></head>
               <body>
                   <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
-                      <h1>Sua caixinha já está a caminho! :) </h1>
+                      <h1>Caixinha chegandooo! uhull  </h1>
                   </div>
                   <div id='content'>
-              <p>Olá,$cliente! Sua caixinha  já foi enviada!</p>
-              <p>Para acompanhar a entrega, use o seguinte decódigo de rastreio:</p>
+              <p>Olá,$cliente! Sua caixinha já foi enviada!</p>
+              <p>Para acompanhar a entrega, use o seguinte código de rastreio:</p>
               <ul> 
                 <li><a href='https://rastreamentocorreios.info/consulta/$rastreio'>$rastreio</a>
                 </li>
@@ -254,8 +264,8 @@ try {
               </body>
               </html>";
     $mail->AltBody = 'Aqui está seu rastreio!';
-    $mail->send();    
-    //exit();
+    //$mail->send();    
+    
     echo 'Message has been sent';
    } catch (Exception $e) {
     echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
