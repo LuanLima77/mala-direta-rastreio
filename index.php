@@ -36,8 +36,8 @@ $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($workSheetToDo, "Ods
 
 //Verificando pedidos do woocommerce
 $url = "https://www.literatour.com.br";
-$consumer_key = "ck_9e9f6e07f48147b3c6c4cf4b66225e4414a11724";
-$consumer_secret ="cs_d79c90ba06f745edafebc270a27d3934682b4014";
+$consumer_key = "key";
+$consumer_secret ="secret";
 
 $woocommerce = new Client($url, $consumer_key, $consumer_secret);
 //Comecei com 16 dias atras, no dia 1/03
@@ -64,8 +64,8 @@ try {
     $mail->Host       = 'smtp.elasticemail.com';                    // Set the SMTP server to send through
     $mail->SMTPAuth   = true;
     $mail->SMTPSecure = 'tls';
-    $mail->Username   = 'edumachion@gmail.com';                     // SMTP username
-    $mail->Password   = 'C34F9ACFD20C021BEDFEB77D6CC54682A840';                               // SMTP password
+    $mail->Username   = 'email';                     // SMTP username
+    $mail->Password   = 'pass';                               // SMTP password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
     $mail->Port       = 2525;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
