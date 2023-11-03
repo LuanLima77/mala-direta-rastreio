@@ -14,7 +14,7 @@ use PHPMailer\PHPMailer\SMTP;
 
 $errors_data = array();
 
-$inputFileName = './nacional15jan22.xls';
+$inputFileName = './pac1novembro23.xls';
 
 
 $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
@@ -78,8 +78,8 @@ try {
     $mail->Host       = 'smtp.elasticemail.com';                    // Set the SMTP server to send through
     $mail->SMTPAuth   = true;
     $mail->SMTPSecure = 'tls';
-    $mail->Username   = 'suporte@literatour.com.br';                     // SMTP username
-    $mail->Password   = 'A1C58D1C35B5D28469407A95024B54F3F95B';                              // SMTP password
+    $mail->Username   = 'suporteERRADO@literatour.com.br';                     // SMTP username
+    $mail->Password   = 'ERRADA!';                              // SMTP password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
     $mail->Port       = 2525;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
