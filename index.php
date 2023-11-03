@@ -15,10 +15,8 @@ use PHPMailer\PHPMailer\SMTP;
 $errors_data = array();
 
 $inputFileName = './nacional15jan22.xls';
-//$outputPlanilha = 'rastreios_estaduais_nao_localizados.ods';
-//$outputPlanilha = 'rastreios_nacionais_nao_localizados.ods';
 
-//$outputFileName = "./$outputPlanilha";
+
 $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
 $reader->setReadDataOnly(true);
 
@@ -30,19 +28,16 @@ $workSheet = $spreadsheet->getActiveSheet()->toArray();
 
 
 
-//$workSheetToDo = $readerOds->load($outputFileName);
-//$writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($workSheetToDo, "Ods");
-
 
 //Verificando pedidos do woocommerce
 $url = "https://www.literatour.com.br";
-$consumer_key = "ck_9e9f6e07f48147b3c6c4cf4b66225e4414a11724";
-$consumer_secret ="cs_d79c90ba06f745edafebc270a27d3934682b4014";
+$consumer_key = "key";
+$consumer_secret ="secret";
 
 $woocommerce = new Client($url, $consumer_key, $consumer_secret);
 //Comecei com 16 dias atras, no dia 1/03
 $inicioQuinzena = gmdate("Y-m-d",strtotime("-18 days")). "T00:00:00";
-$fimQuinzena = gmdate("Y-m-d",strtotime("-2 days")). "T00:00:00";
+$fimQuinzena = gmdate("Y-m-d",strtotime("-3 days")). "T00:00:00";
 
 //USAR PAGINACAO
 //$ontem = "2020-05-31T18:30:00";
@@ -98,10 +93,10 @@ try {
 //https://rastreamentocorreios.info/consulta/JN420977697BR
     // Content
     $mail->isHTML(true);                                  // Set email format to HTML
-    $mail->Subject = 'Literatour - Sua caixinha já foi despachada   pelos Correios';
+    $mail->Subject = 'Literatour - Sua caixinha já foi enviada    pelos Correios';
     $mail->Body    = "
               <html>
-              <head><title>Caixinha chegando :) </title></head>
+              <head><title>Caixinha a caminhoo :) </title></head>
               <body>
                   <div style='background-color: #ff8000; color:snow; font-family: Arial, Helvetica, sans-serif'>
                       <h1>Kit enviado!! Uhull!  </h1>
@@ -220,10 +215,6 @@ foreach($recentcustomers as $customer)
                . ", " . $customer->shipping->number . ", " . $customer->shipping->neighborhood . ", " . $customer->shipping->city
                . ", " . $customer->shipping->state;
 
-              // echo "DESTINATARIO=>" . $row[2] . "<br>";
-    // echo "CEP=>" . $row[3] . "<br>";
-    // echo "UF=>" . $row[4] . "<br>";
-    // echo "RASTREIO=>" . $row[8] . "<br>";
     if($customer->shipping->postcode == $row[3])
      {
        $userFoundName = $customer->billing->first_name . " " . $customer->billing->last_name  ; 
@@ -286,13 +277,7 @@ foreach($recentcustomers as $customer)
                $customer->billing->first_name . " " . $customer->billing->last_name . 
                "CEP " . $customer->shipping->postcode ." - UF:  " . $customer->shipping->state . " <br>";
 
-               //marcando na planilha como nao localizado
-               $nomeCompleto = $customer->billing->first_name . " " . $customer->billing->last_name;
-               //$row = $workSheetToDo->getActiveSheet()->getHighestRow()+1;
-               //$workSheetToDo->getActiveSheet()->insertNewRowBefore($row);
-               //$workSheetToDo->getActiveSheet()->setCellValue('A'.$row,$nomeCompleto);
-               //$workSheetToDo->getActiveSheet()->setCellValue('B'.$row,$customer->shipping->postcode);
-               //$workSheetToDo->getActiveSheet()->setCellValue('C'.$row,$customer->shipping->state);
+               
     }
   }else
    {
@@ -301,17 +286,11 @@ foreach($recentcustomers as $customer)
     $customer->billing->first_name . " " . $customer->billing->last_name . 
     "</b> CEP <b>" . $customer->shipping->postcode ."</b> - UF: <b>" . $customer->shipping->state . "</b> <br>";
 
-    $nomeCompleto = $customer->billing->first_name . " " . $customer->billing->last_name;
-    //$row = $workSheetToDo->getActiveSheet()->getHighestRow()+1;
-    //$workSheetToDo->getActiveSheet()->insertNewRowBefore($row);
-    //$workSheetToDo->getActiveSheet()->setCellValue('A'.$row,$nomeCompleto);
-    //$workSheetToDo->getActiveSheet()->setCellValue('B'.$row,$customer->shipping->postcode);
-    //$workSheetToDo->getActiveSheet()->setCellValue('C'.$row,$customer->shipping->state);  
+  
   }
 
 
    echo "-------------------------" . "<br>";
-   //$writer->save($outputPlanilha);
    
 }
 
@@ -345,7 +324,6 @@ while(count($errors_data) > 0 and $tentativas <= 3){
   
   }
 
-  
 
 }
 
