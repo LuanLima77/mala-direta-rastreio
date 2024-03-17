@@ -14,7 +14,7 @@ use PHPMailer\PHPMailer\SMTP;
 
 $errors_data = array();
 
-$inputFileName = './pac1novembro23.xls';
+$inputFileName = './nacional15fev24.xls';
 
 
 $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
@@ -26,18 +26,20 @@ $readerOds = new \PhpOffice\PhpSpreadsheet\Reader\Ods();
 $spreadsheet = $reader->load($inputFileName);
 $workSheet = $spreadsheet->getActiveSheet()->toArray();
 
+define("CONSUMER_KEY", "ck_a6c8529cde896bd878ed42bb99fc757134ba16ab");
+define("CONSUMER_SECRET","cs_c5b1f053c045dbcbd895ee5ce23d93d62a7441a4");
 
 
 
 //Verificando pedidos do woocommerce
 $url = "https://www.literatour.com.br";
-$consumer_key = "key";
-$consumer_secret ="secret";
+$consumer_key = CONSUMER_KEY;
+$consumer_secret =CONSUMER_SECRET;
 
 $woocommerce = new Client($url, $consumer_key, $consumer_secret);
 //Comecei com 16 dias atras, no dia 1/03
-$inicioQuinzena = gmdate("Y-m-d",strtotime("-18 days")). "T00:00:00";
-$fimQuinzena = gmdate("Y-m-d",strtotime("-3 days")). "T00:00:00";
+$inicioQuinzena = gmdate("Y-m-d",strtotime("-16 days")). "T00:00:00";
+$fimQuinzena = gmdate("Y-m-d",strtotime("-1 days")). "T00:00:00";
 
 //USAR PAGINACAO
 //$ontem = "2020-05-31T18:30:00";
@@ -78,8 +80,8 @@ try {
     $mail->Host       = 'smtp.elasticemail.com';                    // Set the SMTP server to send through
     $mail->SMTPAuth   = true;
     $mail->SMTPSecure = 'tls';
-    $mail->Username   = 'suporteERRADO@literatour.com.br';                     // SMTP username
-    $mail->Password   = 'ERRADA!';                              // SMTP password
+    $mail->Username   = 'suporte@literatour.com.br';                     // SMTP username
+    $mail->Password   = 'A1C58D1C35B5D28469407A95024B54F3F95B';                              // SMTP password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` encouraged
     $mail->Port       = 2525;                                    // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
@@ -93,7 +95,7 @@ try {
 //https://rastreamentocorreios.info/consulta/JN420977697BR
     // Content
     $mail->isHTML(true);                                  // Set email format to HTML
-    $mail->Subject = 'Literatour - Sua caixinha já foi enviada    pelos Correios';
+    $mail->Subject = 'Literatour - Sua caixinha já foi enviada  pelos Correios';
     $mail->Body    = "
               <html>
               <head><title>Caixinha a caminhoo :) </title></head>
@@ -160,7 +162,7 @@ $parameters = [
     "before" => $fimQuinzena,
     "per_page" => 100,
     "page" => $i,
-    "order" => "asc"
+    "order" => "asc",
    
 ];
 
@@ -169,6 +171,8 @@ try {
   $recentcustomers = $woocommerce->get($endpoint, $parameters);
 
 } catch (Throwable $e) {
+  //var_dump($e);
+ // die();
   echo '<hr><p style="color:red;">Fatal error não foi possível obter os dados dos clientes</p><hr>';
   sleep(120);
   $i--;
@@ -224,16 +228,23 @@ foreach($recentcustomers as $customer)
        
 }
 
+//TODO
+/**
+ * Começar olhando para a PLANILHA que tem menos linhas e sempre que houver o match unico de CEP, remover da array que representa a planilha
+ * SE houver match simples, fazer o double check valido apenas pelo primeiro nome, uma vez que os nomes do meio sempre ocasionam problema
+ * 
+ * CASO DE MATCH DUPLO, aumentar a sensibilidade do primeiro nome
+ */
   if($userFound == 1)
   {   
     echo  "<b>$userFoundName encontrado(a)!</b>(match simples de CEP ) </br>";
 
     //Exige apenas 40% de precisao, uma vez que  o CEP já bateu
     similar_text(strtolower($customer->billing->first_name), strtolower($row[2]), $percent);
-    if($percent > 15)
+    if($percent > 40)
     {
       //enviando email...
-      enviarRastreioPorEmail($data,$pedido, $plano,$email,$cliente,$rastreioLocalizado,$endereco);
+    enviarRastreioPorEmail($data,$pedido, $plano,$email,$cliente,$rastreioLocalizado,$endereco);
       //post pedido atualizado com rastreio
 
       //$rastreio_final = (string) $rastreioLocalizado;
